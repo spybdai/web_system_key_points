@@ -70,7 +70,8 @@ radix = 16 的 python 实现
 
 ```python
 """
-describe the details of the approach, so, try not to use the lib or built-in functions
+describe the details of the approach, 
+so, try not to use the lib or built-in functions
 """
 
 
