@@ -3,6 +3,10 @@
 * [Introduction](README.md)
 
 * [Principle View](principle_view/principle_view.md)
+  * [algorithm](principle_view/algorithm/algorithm.md)
+    * [sort](principle_view/algorithm/sort/sort.md)
+      * [radix sort](principle_view/algorithm/sort/radix_sort.md)
+  * [os](principle_view/os/os.md)
   * [nework](principle_view/network/network.md)
     * [tcp/ip](principle_view/network/tcp-ip/tcp-ip.md)
       * [keep-alive](principle_view/network/tcp-ip/keep_alive/keep_alive.md)
@@ -10,11 +14,9 @@
         * web server keep-alive
         * [tcp supporting of keep-alive](principle_view/network/tcp-ip/keep_alive/tcp_support.md)
     * [http](principle_view/network/http.md)
-  * [os](principle_view/os/os.md)
   * [distributed system](principle_view/distributed_system/distributed_system.md)
     * [consensus](principle_view/distributed_system/consensus/consensus.md)
       * [Paxos](principle_view/distributed_system/consensus/paxos.md)
-  * algorithm
 * [Component View](component_view/component_view.md)
   * database
   * web server

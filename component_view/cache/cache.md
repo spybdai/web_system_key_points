@@ -16,7 +16,7 @@ This section will introduce
 
 * mcrouter
 
-### Rerference
+### Rerferences
 
 Please refer to the sub-sections.
 
