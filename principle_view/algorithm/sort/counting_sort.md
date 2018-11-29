@@ -10,7 +10,7 @@
 * 用额外存储空间$$C(k)$$统计每个元素出现的次数，$$k=max-min+1$$, 其中，$$max, min$$ 为待排序元素的最大值和最小值
 * 根据每个元素出现的次数，确定其在排序后数组中的位置。
 
-**步骤**
+**<a name="steps"></a>步骤**
 
 ```
 step1. 遍历input_array，统计每个元素出现的次数，放入counting_array
@@ -18,9 +18,9 @@ step2. 累加counting_array，确定每个元素在out_array(排序后数组)中
 step3. 遍历input_array, 将每个元素放入out_array对应的位置
 ```
 
-(以下图片来自来自微信文章[拜托，面试别再问我计数排序了！！！][btmsb]。请注意，以下图片所示的counting sort过程，**丢了排序的稳定性，并非“严格意义”上的计数排序**。但是可以直观的展示计数排序的原理)
+(以下图片来自来自微信文章[拜托，面试别再问我计数排序了！！！][btmsb]。请注意，图片所示的counting sort过程，**丢了排序的稳定性**。但是可以直观的展示计数排序的原理)
 
-待排序数组$$arr={5, 3, 7, 1, 8, 2, 9, 4, 7, 2, 6, 6, 2, 6, 6}$$
+待排序数组$$arr={5, 3, 7, 1, 8, 2, 9, 4, 7, 2, 6, 6, 2, 6, 6}​$$
 
 1. 统计每个元素出现的个数
 
@@ -71,7 +71,7 @@ def counting_sort_stable_strict(l):
     return s
 
 
-def counting_sort_unstable_2(l):
+def counting_sort_unstable(l):
     """
     该函数展示上图所描述的过程，可以看到，这种实现虽然简单易懂，但是会丧失排序的稳定性
     """
@@ -91,27 +91,35 @@ def counting_sort_unstable_2(l):
             pointer += 1
 ```
 
-
-
 **稳定性**
 
-根据实现方式的不同，稳定性可能不同
+实现方式不同，会导致不同的稳定性表现。例如，
+
+* counting_sort_unstable参照[步骤](#steps)中图示过程实现，不具有稳定性。优点是逻辑简单明了，需要的支持空间少。因为排序后的数组复用了待排序数组的空间。
+* counting_sort_stable_strict的实现方式则能够保证稳定性。
 
 **效率**
 
-**适用场景**
+依照counting_sort_stable_strict的实现方式，
+
+* 算法执行时间大致为$$2n+k$$, 其中，$$n$$为待排序数组个数，$$k=max-min+1$$
+* 时间复杂度为$$O(n+k)$$
+* 空间复杂度为$$O(n+k)$$, 输出数组占用$$n$$, 排序数组占用$$k$$
+* 以上可知，在排序个数$$n$$相同的情况下，$$k$$越小（排序元素跨度越小），时间和空间消耗越低
 
 **Reference**
 
 * [计数排序][jspx]
 * [counting sort][cs]
 * [拜托，面试别再问我计数排序了！！！][btmsb]
+* [稳定性][wdx]
 
 
 
 [jspx]: https://zh.wikipedia.org/wiki/%E8%AE%A1%E6%95%B0%E6%8E%92%E5%BA%8F
 [cs]: https://en.wikipedia.org/wiki/Counting_sort
 [btmsb]: https://mp.weixin.qq.com/s?__biz=MjM5ODYxMDA5OQ==&mid=2651961665&idx=1&sn=b7a6d0ca45a0b91801778baec0f759c6&chksm=bd2d0c9d8a5a858b0fc54dbc08d75ecdb4f11383a97222aede422c9f72a7c0240d82e5833aec&scene=21#wechat_redirect
+[wdx]: https://zh.wikipedia.org/wiki/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95#%E7%A8%B3%E5%AE%9A%E6%80%A7
 
 
 
