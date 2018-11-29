@@ -7,6 +7,7 @@
     * [sort](principle_view/algorithm/sort/sort.md)
       * [radix sort](principle_view/algorithm/sort/radix_sort.md)
       * [counting sort](principle_view/algorithm/sort/counting_sort.md)
+      * [insertion sort](principle_view/algorithm/sort/insertion_sort.md)
   * [os](principle_view/os/os.md)
   * [nework](principle_view/network/network.md)
     * [tcp/ip](principle_view/network/tcp-ip/tcp-ip.md)

@@ -4,3 +4,6 @@
 - 桶排序
 - [counting sort](counting_sort.md)
 
+* insertion sort
+  * [insertion sort](insertion_sort.md)
+
