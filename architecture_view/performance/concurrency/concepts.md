@@ -2,7 +2,7 @@
 
 本节介绍并发相关的概念。有些概念的描述，在不同的场景下会有歧义和含糊不清。本文以Wiki的定义和描述为准。
 
-<br />
+<br/>
 
 **并发 VS 并行 （Concurrency vs. Parallelism）**
 
@@ -19,7 +19,7 @@
 
 > It describes computers with [multiple processing elements](https://en.wikipedia.org/wiki/Multiple_processing_elements) that perform the same operation on multiple data points simultaneously. Such machines exploit [data level parallelism](https://en.wikipedia.org/wiki/Data_parallelism), but not [concurrency](https://en.wikipedia.org/wiki/Concurrent_computing): there are simultaneous (parallel) computations, but only a single process (instruction) at a given moment. 
 
-<br />
+<br/>
 
 **进程，内核线程，用户线程，Fibers和协程 (Process, Kernel Threads, User Threads, Filbers and Coroutines)**
 
@@ -60,7 +60,7 @@ WiKi([ref5](#5))上有一段关于这己个概念的精彩概述，建议精读�
 * Fibers是合作式调度的用户线程。一个运行的Fiber必须显式的让渡运行权，从而让其他fiber获得运行。
 * Coroutine与Fiber非常相似，不同点在于Fiber是系统级别的，而coroutine是编程语言级别的。
 
-<br />
+<br/>
 
 **Threading Mapping Models**
 
@@ -92,12 +92,12 @@ WiKi([ref5](#5))上有一段关于这己个概念的精彩概述，建议精读�
 
 对应关系模型示意图: 来自[ref11](#11)
 
-<div align="center">
+<dev align="center">
 <img src="images/1_2_1.png" height="330" width="230" >
 <img src="images/N_2_1.png" height="330" width="300" >
 <img src="images/M_2_N.png" height="330" width="230" >
-</div>
-<br />
+</dev>
+<br>
 
 **I/O Models**
 
@@ -130,13 +130,69 @@ WiKi([ref5](#5))上有一段关于这己个概念的精彩概述，建议精读�
 
 从文档来看，似乎Go语言可以避免这个问题。后面继续讨论。
 
-<br />
+<br>
 
 **Reactor VS Proactor**
 
+Reactor和Proactor是并发请求场景下关于事件处理的两种设计模型。Wiki([ref17](#17),[ref18](#18))对两个模型的定义，并未强调“并发”，但是提出这两个概念的论文([ref19](#19),[ref20](#20))，都是在并发问题的场景下，引入了这两个概念。
+
+* Reactor
+
+  [Ref19](#19)描述了Reactor模型中的角色和工作方式。Reactor模型有以下几种角色：
+
+  * Handles。也就是[Ref17](#17)提到的Resources。如network  connections,  open files,  timers,  synchronization objects,  等等。
+
+  * Event Handler (Concrete Event Handler)。事件的实际处理程序。
+
+  * Synchronous Event Demultiplexer。作用是阻塞式等待资源集上事件的发生。当时间发生时，返回。对于I/O来说，一个常见的例子是select系统调用。
+
+  * Initiation Dispatcher。 提供一组接口，支持Event Handler的注册，注销和分发。当关注的事件发生的时候，Demultiplexer会通知Dispatcher，而后者会调用Event Handler的处理过程。
+
+  OMT 类图和交互图如下（来自[Ref19](#19)）
+  
+  <p align="center">
+  <img src="images/reactor_omt.png" height="300" width="350" >
+  <img src="images/reactor_interaction.png" height="300" width="350" >
+  </p>
+  Reactor模型的使用非常广泛。后面将要讨论的gevent和tornado的并发机制，都是基于Reactor
+  模型。 [Ref21](#21)提到，Redis的文件事件处理器也是基于Reactor模型。研究Redis的时候，再补充相关细节。
 
 
-<br />
+* Proactor
+
+  Reactor模型虽然应用非常广泛，但还是有很多问题。Proactor模型的出现，就是为了解决这些问题。[Ref20](#20)列举了这些问题：
+
+  * Reactor模型带来了编程复杂性的提高。这一点主要是指开发者需要避免阻塞式系统调用。
+  * 缺少对多线程的支持。多数的操作系通过selelct等系统调用分离事件，而**select不允许多个线程对同一资源集上循环等待**。这一点笔者做过试验，在Linux和Mac平台下是可以的。（论文中的这个论断，有可能跟早期操作系统的实现有关？）
+  * 运行任务的调度。在同步的多线程抢占式调度的实现方法中，线程的调度是由操作系统完成的。这种操作系统级别的调度不适用基于Reactor的实现体系，因为它只允许一个（内核）线程。所以，开发者需要自行调度多个运行任务。这段论述实际上描述的一对一线程模型和多对一线程模型的问题。
+
+  Proactor模型具有以下角色：
+
+  * Proactive Initiator。可以理解为异步I/O的发起方。比如，web服务器中接受读写socket的代码组件。Proactive Initiator发起异步操作的时候，需要向Asynchronous Operation Processor注册一个Completion Handler和一个 Completion Dispatcher。
+  * Asynchronous Operation。异步操作。由Proactive Initiator发起。
+  * Asynchronous Operation Processor。异步操作执行者。一般由操作系统实现。异步操作完成之后，会通知到Completion Dispatcher。
+  * Completion Dispatcher。 异步IO完成之后，负责调用对应的Completion Handler。
+  * Completion Handler。异步IO操作完成之后的处理程序。
+
+  OMT 类图和交互图如下（来自[Ref20](#20)）
+  <p align="center">
+  <img src="images/proactor_omt.png" height="300" width="350" >
+  <img src="images/proactor_interaction.png" height="300" width="350" >
+  </p>
+
+
+* Reactor VS Proactior
+
+  两个模型最大的不同在于， I/O操作由谁来完成。
+
+  * Reactor模型中，采用select等系统调用做Dispatcher。得到Demultiplexer的通知之后（实际上是IO可操作的事件）之后，Dispatcher会调用Event Handler处理程序。因此，实际的IO操作是由Event Handler来完成。而根据神书《unix网络编程卷I》的定义，这种场景属于非阻塞同步IO模型。
+  * Proactor模型中，异步IO操作由操作系统完成，Dispatcher会调用Event Handler处理程序的时候，IO操作已经完成（这个过程包括等待IO可操作和实际的IO操作两部分）。这种场景在神书中被定义为“真正意义上的”异步IO模型。
+  * 参照[ref22](#22)的经典图示：
+    ![alt](images/block_vs_nonb.png)
+    Reactor模型对应的场景为Synchronous+Non-blocking, Proactor模型对应的场景为Asynchronous+Non-blocking
+  * AIO库不成熟不成熟，导致了目前Proactor模型较少见。Nginx有部分采用kernel AIO，不确定是否有采用Proactor模型。
+
+<br/>
 
 **Multi-Processing & Threading**
 
@@ -158,27 +214,33 @@ WiKi([ref5](#5))上有一段关于这己个概念的精彩概述，建议精读�
 
 #### Reference
 
-1. <a id="1"></a>[Rob Pike’s talk](rp)
+1. <a id="1"></a>[Rob Pike’s talk][rp]
 2. <a id="2"></a>[Overview of Modern Concurrency and Parallelism Concepts][omcpc]
 3. <a id="3"></a>[并发之痛 Thread，Goroutine，Actor][bfzt]
 4. <a id="4"></a>[SIMD][simd]
-5. <a id="5"></a>[Thread](thread)
-6. <a id="6"></a>[Preemtive Multitasking](pm)
-7. <a id="7"></a>[GNU C Library](glibc)
-8. <a id="8"></a>[POSIX Threads](pthreads)
-9. <a id="9"></a>[NPTL](nptl)
-10. <a id="10"></a>[GNU Portable Threads](pth)
-11. <a id="11"></a>[Go并发原理](gcp)
+5. <a id="5"></a>[Thread][thread]
+6. <a id="6"></a>[Preemtive Multitasking][pm]
+7. <a id="7"></a>[GNU C Library][glibc]
+8. <a id="8"></a>[POSIX Threads][pthreads]
+9. <a id="9"></a>[NPTL][nptl]
+10. <a id="10"></a>[GNU Portable Threads][pth]
+11. <a id="11"></a>[Go并发原理][gcp]
 12. <a id="12"></a>UNIX网络编程卷1
-13. <a id="13"></a>[linux下的异步IO（AIO）是否已成熟](aiosfcs)
-14. <a id="14"></a>[Asynchronous I/O and event notification on linux](aioaen)
-15. <a id="15"></a>[Kernel Asynchronous I/O (AIO) Support for Linux](aiok)
-16. <a id="16"></a>[libeio](libeio)
+13. <a id="13"></a>[linux下的异步IO（AIO）是否已成熟][aiosfcs]
+14. <a id="14"></a>[Asynchronous I/O and event notification on linux][aioaen]
+15. <a id="15"></a>[Kernel Asynchronous I/O (AIO) Support for Linux][aiok]
+16. <a id="16"></a>[libeio][ibeio]
+17. <a id="17"></a>[Reactor][reactor]
+18. <a id="18"></a>[Proactor][proactor]
+19. <a id="19"></a>Schmidt, Douglas C., An Object Behavioral Pattern for Demultiplexing and Dispatching Handles for Synchronous Events
+20. <a id="20"></a>Proactor - An Object Behavioral Pattern for Demultiplexing and Dispatching Handlers for Asynchronous Events
+21. <a id="21"></a>[Redis与Reactor模式][redis]
+22. <a id="22"></a>[Asynchronous I/O][aiow]
+
+
 
 [rp]: https://vimeo.com/49718712
-
 [omcpc]:https://nikolaygrozev.wordpress.com/2015/07/14/overview-of-modern-concurrency-and-parallelism-concepts/
-
 [bfzt]: http://jolestar.com/parallel-programming-model-thread-goroutine-actor/
 [simd]: https://en.wikipedia.org/wiki/SIMD
 [thread]: https://en.wikipedia.org/wiki/Thread_(computing)
@@ -187,12 +249,19 @@ WiKi([ref5](#5))上有一段关于这己个概念的精彩概述，建议精读�
 [pthreads]: https://en.wikipedia.org/wiki/POSIX_Threads
 [nptl]: https://en.wikipedia.org/wiki/Native_POSIX_Thread_Library
 [pth]: https://en.wikipedia.org/wiki/GNU_Portable_Threads
-
 [gcp]: https://i6448038.github.io/2017/12/04/golang-concurrency-principle/
-
 [aiosfcs]: https://www.zhihu.com/question/26943558
-
 [aioaen]: http://davmac.org/davpage/linux/async-io.html#posixaio
 [aiok]: http://lse.sourceforge.net/io/aio.html
 [libeio]: http://software.schmorp.de/pkg/libeio.html
+[reactor]: https://en.wikipedia.org/wiki/Reactor_pattern
+[proactor]: https://en.wikipedia.org/wiki/Proactor_pattern
+
+[redis]: http://www.dengshenyu.com/%E5%90%8E%E7%AB%AF%E6%8A%80%E6%9C%AF/2016/01/09/redis-reactor-pattern.html
+
+[ aiow ]: https://en.wikipedia.org/wiki/Asynchronous_I/O
+
+
+
+
 
