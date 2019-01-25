@@ -194,11 +194,61 @@ Reactor和Proactor是并发请求场景下关于事件处理的两种设计模�
 
 <br/>
 
-**Multi-Processing & Threading**
+**Green Threads**
 
-**Event-Loop + Callabck**
+Green Threads前文简略的提到过。根据[ref23](#23), Green Threads最初是指Java1.1版本JVM采用的线程库，该线程库由Sun Microsystems的Green Team设计。一些早前的操作系统不支持系统原生线程，比如早期的Solaris系统<sup>[[ref2](#2)]</sup>，因此，该线程库被设计来用以支持此类操作系统。Green Threads有诸多限制，因此在之后的版本中，Java抛弃了Green Threads, 转而采用操作系统原生线程。
 
-**Green Thread**
+根据[ref23](#23)，Green Threads现在是指在由 [runtime library](https://en.wikipedia.org/wiki/Runtime_library) 或 [virtual machine](https://en.wikipedia.org/wiki/Virtual_machine) (VM)调度而非由操作系统调度的一类线程。这类线程不依赖操作系统模拟出多线程的运行环境，并在用户空间被管理。从这个角度理解，前面提到的Fiber, Coroutine等微线程概念都可以纳入Green Threads的范畴。
+
+前文提到Green Threads有诸多限制，这些限制其实就是多对一线程（或一对一，协程在但用户线程内调度）模型的问题。因为Green Threads的实现正是基于这样的线程模型。
+
+文献[ref24](#24)比较了Green Threads和Native Threads的区别，简单总结如下
+
+Green Threads:
+
+* 合作式调度，通常由runtime或者VM来实现。开发者需要显式让渡运行权。
+
+* 无法利用多核CPU优势。（单进程情况下）
+
+* 可以工作在不支持原生线程的系统。
+
+* Runtime可以按需实现需要的调度策略。
+
+* 线程间同步问题不复存在。通过在竞争条件之外的代码部分进行运行权让渡。
+
+* 微线程。无需创建内核级线程对象，调度时间无须操作系统参与。
+
+* 对于阻塞式系统调用，如果一个线程阻塞，其余都阻塞。该问题可通过异步IO或IO复用机制解决。
+
+* 对GC友好。GC运行的时候，不需要suspend其它线程。[ref24](#24)原文如下：
+  >Are somewhat friendlier to [GarbageCollector](http://wiki.c2.com/?GarbageCollector)s--no need to actively suspend the other threads in the application when the GC runs, and the GC has access to the saved continuations (Green threads are hidden [CoRoutine](http://wiki.c2.com/?CoRoutine)s, basically) of the other threads when it tries to determine the RootSet.
+
+  其中的具体细节，笔者不太清楚。一种可能的实现方式的**猜测**是，GC线程和其它application线程被Runtime（或VM）按照某一策略统一调度，此时，GC线程和application线程同属同一进程，因此，GC线程被让渡得到运行权之后，可以访问进程内某一特定数据来获取垃圾对象信息并执行垃圾回收，而此时，其他线程因为运行权被让渡出去而处于非运行状态。
+
+* 可以扩展到非常多数目的threads。这个问题主要取决于Green Threads实现方案对内存的使用情况。（因为Green Threads的切换成本极低）。
+
+Native Threads:
+
+* 由操作系统调度。现代操作系统主要采用抢占式调度。
+
+* 支持多核CPU。可以有与CPU数量相同的threads**并行**。
+
+* 调度策略由操作系统提供。因此，多线程程序可能（在不同的OS平台）有不同的行为。
+
+* 抢占可能发生在任何时间。（因此，线程同步需要仔细考虑。）
+
+* 即便微小的竞争条件，也需要内核级的同步。
+
+* Heavy-weight。线程，信号量等都是内核级对象，调度时间，同步事件需要trap到内核。
+
+* 某一个线程阻塞，不影响其他线程执行。GC线程运行的时候，要求所有其他线程处于suspended状态。要获知其他线程的状态，同样需要内核的帮助。[ref24](#24)原文引用如下：
+
+  >Garbage collection requires that all other threads be suspended when the GC runs. Discovery of the state of the other threads (to determine the root set) also required pestering the kernel. Another source of inefficiency.
+  >
+  >- Not always. Concurrent garbage collection algorithms exist, and I believe Sun's JVM uses one.
+
+* 很多操作系统对单一进程（或整个操作系统）内线程的数量有限制。
+<br/>
 
 **Protothread**
 
@@ -236,6 +286,8 @@ Reactor和Proactor是并发请求场景下关于事件处理的两种设计模�
 20. <a id="20"></a>Proactor - An Object Behavioral Pattern for Demultiplexing and Dispatching Handlers for Asynchronous Events
 21. <a id="21"></a>[Redis与Reactor模式][redis]
 22. <a id="22"></a>[Asynchronous I/O][aiow]
+23. <a id="23"></a>[Green Threads][gt]
+24. <a id="24"></a>[Green Vs Native Threads][gvnt]
 
 
 
@@ -260,6 +312,13 @@ Reactor和Proactor是并发请求场景下关于事件处理的两种设计模�
 [redis]: http://www.dengshenyu.com/%E5%90%8E%E7%AB%AF%E6%8A%80%E6%9C%AF/2016/01/09/redis-reactor-pattern.html
 
 [ aiow ]: https://en.wikipedia.org/wiki/Asynchronous_I/O
+
+[gt]: https://en.wikipedia.org/wiki/Green_threads
+[gvnt]: http://wiki.c2.com/?GreenVsNativeThreads
+
+
+
+
 
 
 
