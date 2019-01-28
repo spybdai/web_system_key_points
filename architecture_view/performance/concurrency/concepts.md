@@ -251,6 +251,24 @@ Native Threads:
 <br/>
 
 **Protothread**
+根据[ref25](#25), [ref2](#2)定义，Protohread是一种stackless的，轻量级的线程（或协程）。（同一进程内的）全部protothreads共享同一的stock（因此内存消耗极低）。Prothreads非抢占式调度，非阻塞系统调用完成之前，需要让渡出运行权限（线程切换成本极低）。Prothreads仅作为C库存在，通常用于嵌入式系统，基于信号驱动实现多任务。
+
+这个定义的难点集中在以下几个问题：
+
+* Protothread是如何实现stackless的？又是如何共享同一的stock的？
+* 非阻塞系统调用完成之前，如何让渡运行权？
+
+[ref26](#26)讲解了protothread的实现，上述问题的答案就在其中。关键有两点：
+
+* 从Protothread的实现来看，protothread就是一个C函数。该函数：
+  * 不使用局部变量（无栈）
+  * 通过全局变量记录函数重入之后开始执行的位置。该位置信息通过C的"\__LINE__"宏实现。
+
+* 非阻塞系统调用如果返回错误，则函数退出，实现运行权限的让渡。函数从下次从记录位置运行的时候，再次调用系统调用。
+
+更多关于Protothread的实现细节（以及C语言的coroutine实现），后面会另起一遍文章讨论。
+
+<br/>
 
 **Fiber vs. Corouting**
 
@@ -288,6 +306,8 @@ Native Threads:
 22. <a id="22"></a>[Asynchronous I/O][aiow]
 23. <a id="23"></a>[Green Threads][gt]
 24. <a id="24"></a>[Green Vs Native Threads][gvnt]
+25. <a id="25"></a>[ProtoThreads][pt]
+26. <a id="26"></a>[Under the hood][uth]
 
 
 
@@ -316,9 +336,9 @@ Native Threads:
 [gt]: https://en.wikipedia.org/wiki/Green_threads
 [gvnt]: http://wiki.c2.com/?GreenVsNativeThreads
 
+[pt]: https://en.wikipedia.org/wiki/Protothread
 
-
-
+[uth]: http://dunkels.com/adam/pt/expansion.html
 
 
 

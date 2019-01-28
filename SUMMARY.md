@@ -46,6 +46,9 @@
   * [performance](architecture_view/performance/performance.md)
     * [concurrency](architecture_view/performance/concurrency/concurrency.md)
       * [concepts](architecture_view/performance/concurrency/concepts.md)
+      * [concurrency patterns](architecture_view/performance/concurrency/concurrency_patterns.md)
+      * [protothread and c coroutine](architecture_view/performance/concurrency/protothread_and_c_coroutine.md)
+      * 
   * availabilty
   * scalability
   * extensibility
